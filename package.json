@@ -1,0 +1,13 @@
+{
+  "name": "dsa-book",
+  "private": true,
+  "scripts": {
+    "build": "docusaurus build",
+    "start": "docusaurus start",
+    "deploy": "docusaurus deploy"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.2.1",
+    "@docusaurus/preset-classic": "3.2.1"
+  }
+}
