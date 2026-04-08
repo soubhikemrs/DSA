@@ -7,6 +7,8 @@ module.exports = {
   organizationName: 'soubhikemrs',
   projectName: 'DSA',
 
+  onBrokenLinks: 'throw',
+
   presets: [
     [
       '@docusaurus/preset-classic',
