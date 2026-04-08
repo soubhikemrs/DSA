@@ -27,6 +27,9 @@ for folder in os.listdir(SOURCE_DIR):
 
     with open(readme_path, "r", encoding="utf-8") as f:
         problem = f.read()
+        # Fix all self-closing HTML issues
+        problem = re.sub(r'<hr>', '<hr />', problem)
+        problem = re.sub(r'<br>', '<br />', problem)
 
     solutions = []
 
