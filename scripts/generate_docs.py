@@ -1,69 +1,79 @@
 import os
 import re
 import html
+import json
+import urllib.request
+import time
 
 SOURCE_DIR = "."
 TARGET_DIR = "docs"
 
 os.makedirs(TARGET_DIR, exist_ok=True)
 
-def html_to_markdown(text):
-    # Decode HTML entities like &nbsp;, &lt;, &gt;
-    text = html.unescape(text)
+# 1. Load manual overrides (for GFG/HackerRank or custom sorting)
+category_map = {}
+if os.path.exists("categories.json"):
+    with open("categories.json", "r", encoding="utf-8") as f:
+        category_map = json.load(f)
 
-    # Remove the LeetCode H2 title completely (we add our own clean H1 later)
-    text = re.sub(r'<h2>.*?</h2>', '', text, flags=re.DOTALL)
+# 2. Function to ask LeetCode for the category
+def fetch_leetcode_category(folder_name):
+    # Extract the slug (e.g., "0001-set-mismatch" -> "set-mismatch")
+    match = re.match(r'^\d+-(.*)', folder_name)
+    if not match:
+        return "Other" # Fallback if it doesn't have a number (like some GFG problems)
     
-    # Format the H3 difficulty properly
+    slug = match.group(1)
+    url = "https://leetcode.com/graphql"
+    payload = {
+        "operationName": "questionData",
+        "variables": {"titleSlug": slug},
+        "query": "query questionData($titleSlug: String!) { question(titleSlug: $titleSlug) { topicTags { name } } }"
+    }
+    
+    try:
+        req = urllib.request.Request(
+            url, 
+            data=json.dumps(payload).encode('utf-8'), 
+            headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            res = json.loads(response.read().decode())
+            tags = res.get("data", {}).get("question", {}).get("topicTags", [])
+            if tags:
+                # Return the very first tag as the main category (e.g., "Array", "Math")
+                return tags[0]["name"]
+    except Exception:
+        pass # If the network fails or problem doesn't exist, we fallback quietly
+    
+    return "Uncategorized"
+
+def html_to_markdown(text):
+    text = html.unescape(text)
+    text = re.sub(r'<h2>.*?</h2>', '', text, flags=re.DOTALL)
     text = re.sub(r'<h3>(.*?)</h3>', r'**Difficulty:** \1\n\n', text)
 
-    # Handle <pre> blocks FIRST so we don't convert inner HTML to Markdown
     def replace_pre(match):
         content = match.group(1)
-        content = re.sub(r'<.*?>', '', content)  # clean tags inside pre
+        content = re.sub(r'<.*?>', '', content)
         return f"\n```text\n{content.strip()}\n```\n"
 
     text = re.sub(r'<pre>(.*?)</pre>', replace_pre, text, flags=re.DOTALL)
-
-    # Superscript / Subscript (fixes 10^4 becoming 104)
     text = re.sub(r'<sup>(.*?)</sup>', r'^\1', text)
     text = re.sub(r'<sub>(.*?)</sub>', r'_\1', text)
-
-    # Strong / Bold
     text = re.sub(r'<strong.*?>(.*?)</strong>', r'**\1**', text, flags=re.DOTALL)
     text = re.sub(r'<b.*?>(.*?)</b>', r'**\1**', text, flags=re.DOTALL)
-
-    # Inline code
     text = re.sub(r'<code>(.*?)</code>', r'`\1`', text, flags=re.DOTALL)
-    
-    # Emphasis / Italic
     text = re.sub(r'<em.*?>(.*?)</em>', r'*\1*', text, flags=re.DOTALL)
     text = re.sub(r'<i.*?>(.*?)</i>', r'*\1*', text, flags=re.DOTALL)
-
-    # Paragraphs -> Newlines
     text = re.sub(r'</?p>', '\n\n', text)
-
-    # Lists
     text = re.sub(r'<li>(.*?)</li>', r'- \1\n', text, flags=re.DOTALL)
     text = re.sub(r'</?ul>', '\n\n', text)
     text = re.sub(r'</?ol>', '\n\n', text)
-
-    # Images (convert to markdown format)
-    text = re.sub(
-        r'<img.*?src="(.*?)".*?>',
-        r'![image](\1)',
-        text
-    )
-
-    # Horizontal Rule
+    text = re.sub(r'<img.*?src="(.*?)".*?>', r'![image](\1)', text)
     text = text.replace('<hr>', '\n---\n')
-
-    # Remove any other leftover HTML tags
     text = re.sub(r'<.*?>', '', text)
-
-    # Clean up excessive empty newlines
     text = re.sub(r'\n{3,}', '\n\n', text)
-
     return text.strip()
 
 def clean_title(folder_name):
@@ -71,10 +81,7 @@ def clean_title(folder_name):
     return name.replace('-', ' ').title()
 
 for folder in os.listdir(SOURCE_DIR):
-    if not os.path.isdir(folder):
-        continue
-
-    if folder in ["docs", ".github", "scripts"]:
+    if not os.path.isdir(folder) or folder in ["docs", ".github", "scripts", "build", "node_modules"]:
         continue
 
     readme_path = os.path.join(folder, "README.md")
@@ -87,14 +94,7 @@ for folder in os.listdir(SOURCE_DIR):
         problem = html_to_markdown(f.read())
 
     solutions = []
-
-    EXTENSIONS = {
-        ".py": "python",
-        ".cpp": "cpp",
-        ".java": "java",
-        ".js": "javascript",
-        ".ts": "typescript"
-    }
+    EXTENSIONS = {".py": "python", ".cpp": "cpp", ".java": "java", ".js": "javascript", ".ts": "typescript"}
 
     for file in os.listdir(folder):
         ext = os.path.splitext(file)[1]
@@ -104,17 +104,21 @@ for folder in os.listdir(SOURCE_DIR):
                 code = f.read()
             solutions.append((file, code, lang))
 
-    content = f"# {title}\n\n"
-    content += "## Problem Statement\n\n"
-    content += problem + "\n\n"
-
+    content = f"# {title}\n\n## Problem Statement\n\n{problem}\n\n"
     for i, (name, code, lang) in enumerate(solutions):
-        content += f"## Solution {i+1}\n\n"
-        content += f"```{lang}\n"
-        content += code.strip()
-        content += "\n```\n\n"
+        content += f"## Solution {i+1}\n\n```{lang}\n{code.strip()}\n```\n\n"
 
     filename = title.lower().replace(" ", "-") + ".md"
 
-    with open(os.path.join(TARGET_DIR, filename), "w", encoding="utf-8") as f:
+    # 3. Determine the category!
+    if folder in category_map:
+        category_path = category_map[folder]
+    else:
+        category_path = fetch_leetcode_category(folder)
+        time.sleep(0.2) # Small delay to be polite to LeetCode's servers
+        
+    out_dir = os.path.join(TARGET_DIR, category_path)
+    os.makedirs(out_dir, exist_ok=True)
+    
+    with open(os.path.join(out_dir, filename), "w", encoding="utf-8") as f:
         f.write(content)
