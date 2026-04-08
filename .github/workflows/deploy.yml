@@ -8,6 +8,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # ----------------------------------------------------
+    # ADDED: Give the token permission to push to gh-pages
+    # ----------------------------------------------------
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Repo
