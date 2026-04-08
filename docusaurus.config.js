@@ -1,3 +1,5 @@
+const {themes} = require('prism-react-renderer');
+
 module.exports = {
   title: 'DSA Book',
   url: 'https://soubhikemrs.github.io',
@@ -23,4 +25,12 @@ module.exports = {
       },
     ],
   ],
+
+  // ADDED: Theme configuration for Code Blocks
+  themeConfig: {
+    prism: {
+      theme: themes.github,        // Light mode code blocks
+      darkTheme: themes.dracula,   // Dark mode code blocks
+    },
+  },
 };

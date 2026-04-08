@@ -109,7 +109,7 @@ for folder in os.listdir(SOURCE_DIR):
     content += problem + "\n\n"
 
     for i, (name, code, lang) in enumerate(solutions):
-        content += f"## Solution {i+1} ({name})\n\n"
+        content += f"## Solution {i+1}\n\n"
         content += f"```{lang}\n"
         content += code.strip()
         content += "\n```\n\n"
