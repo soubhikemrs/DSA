@@ -3,7 +3,8 @@ module.exports = {
   url: 'https://soubhikemrs.github.io',
   baseUrl: '/DSA/',
   favicon: 'img/favicon.ico',
-
+  trailingSlash: false,
+  
   organizationName: 'soubhikemrs',
   projectName: 'DSA',
 
