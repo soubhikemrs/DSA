@@ -1,3 +1,6 @@
+---
+sidebar_position: 1
+---
 # DSA Book
 
 Welcome to my DSA problem-solving repository.
