@@ -35,7 +35,7 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: npm install --no-package-lock
+        run: npm ci
 
       - name: Build Website
         env:
