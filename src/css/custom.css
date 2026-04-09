@@ -1,0 +1,10 @@
+/* Import a stylish cursive font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+
+/* Apply it to the Header Title */
+.navbar__title {
+  font-family: 'Pacifico', cursive;
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
