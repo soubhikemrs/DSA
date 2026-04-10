@@ -23,6 +23,18 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
+      # ADD THIS: Caches API calls & Docusaurus build files!
+      # ---------------------------------------------------------
+      - name: Restore API and Build Caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            categories_api.json
+            .docusaurus
+          key: dsa-cache-${{ github.run_id }}
+          restore-keys: |
+            dsa-cache-
+
       - name: Setup Python
         uses: actions/setup-python@v4
 
