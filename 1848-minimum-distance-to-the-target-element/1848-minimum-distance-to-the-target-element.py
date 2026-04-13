@@ -7,7 +7,7 @@ class Solution:
             if leftIdx >= 0:
                 if nums[leftIdx] == target:
                     return abs(leftIdx-start)
-            elif rightIdx < len(nums):
+            if rightIdx < len(nums):
                 if nums[rightIdx] == target:
                     return abs(rightIdx-start)
             leftIdx -= 1
