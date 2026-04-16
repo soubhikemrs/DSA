@@ -1,28 +1,32 @@
+from collections import defaultdict
+from typing import List
 class Solution:
     def solveQueries(self, nums: List[int], queries: List[int]) -> List[int]:
-        nums_dict:Dict[int, List[int]] = {}
         n = len(nums)
-        min_dist_list = [n]*n
+
+        # Group the indices
+        # key = element value
+        # value = list of indices of that element in nums
+        pos = defaultdict(list)
         for i, num in enumerate(nums):
-            if num not in nums_dict:
-                nums_dict[num] = []
-            nums_dict[num].append(i) #value is list of indices already sorted since traversing incrementally
-            if len(nums_dict[num]) >= 2:
-                min_dist_list[i] = min(i-nums_dict[num][-2], min_dist_list[i])
-                min_dist_list[nums_dict[num][-2]] = min(min_dist_list[i],min_dist_list[nums_dict[num][-2]])
-
-        min_dist_list[0] = min(min_dist_list[0], n-(nums_dict[nums[0]][-1] - 0)) 
-
+            pos[num].append(i)
+        
+        # precompute min distance for each index
+        min_dist = [-1]*n
+        for ele, indices in pos.items():
+            k = len(indices)
+            if k == 1:
+                continue
+            for j in range(k):
+                curr = indices[j]
+                next = indices[(j+1)%k]
+                prev = indices[(j-1+k)%k]
+                d1 = abs(curr-next)
+                d2 = abs(curr-prev)
+                d3 = n - d1
+                d4 = n - d2
+                min_dist[curr] = min(d1, d2, d3, d4)
         ans = []
         for query in queries:
-            key = nums[query]
-            if len(nums_dict[key]) == 1:
-                ans.append(-1)
-            else:
-                min_dist = n
-                if nums_dict[key][0] == query:
-                    min_dist = min(min_dist_list[query], n-(nums_dict[key][-1] - query))
-                else:
-                    min_dist = min(min_dist_list[query], n-(query-nums_dict[key][0]))
-                ans.append(min_dist)
+            ans.append(min_dist[query])
         return ans
